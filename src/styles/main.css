@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme { --color-primary: #2878ff; --color-background: #f4f7fb; --color-surface: #ffffff; --color-border: #e4eaf2; --color-muted: #eef2f7; --color-muted-foreground: #697386; --color-foreground: #172033; }
+:root { font-family: Inter, "Noto Sans SC", system-ui, sans-serif; color: #172033; background: #f4f7fb; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; } html, body, #root { width: 100%; height: 100%; margin: 0; } body { min-width: 320px; overflow: hidden; } button, input { font-family: inherit; } button:not(:disabled) { transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease; } button:not(:disabled):hover { transform: translateY(-1px); } button:not(:disabled):active { transform: translateY(0); } button:focus-visible { outline: 2px solid color-mix(in srgb, var(--color-primary) 60%, transparent); outline-offset: 2px; } input { user-select: text; }
+.dark { --color-background: #0f141d; --color-surface: #1b222f; --color-border: #293345; --color-muted: #202938; --color-muted-foreground: #98a4b7; --color-foreground: #f3f6fb; color-scheme: dark; }
+.app-scroll { overflow-y: auto; scrollbar-width: thin; } .app-scroll::-webkit-scrollbar { width: 8px; } .app-scroll::-webkit-scrollbar-thumb { background: #aab9ce; border-radius: 99px; }
+.archive-feed-card { content-visibility: auto; contain-intrinsic-size: auto 350px; }
+.library-content-card { content-visibility: auto; contain-intrinsic-size: auto 300px; }
+.album-resource-card { content-visibility: auto; contain-intrinsic-size: auto 270px; }
+.album-preview { width: min(960px, 94vw); max-height: 94vh; }
+.album-preview::backdrop { background: rgb(0 0 0 / 80%); }
+.archive-image-dialog { max-width: 94vw; max-height: 94vh; padding: 24px; border: 0; border-radius: 16px; background: transparent; overflow: visible; }
+.archive-image-dialog::backdrop { background: rgb(0 0 0 / 85%); }
+@media (prefers-reduced-motion: reduce) { button, button:not(:disabled) { transition: none; } }

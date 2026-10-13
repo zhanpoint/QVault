@@ -1,0 +1,37 @@
+{
+  "name": "QVault",
+  "private": true,
+  "version": "1.0.3",
+  "type": "module",
+  "scripts": {
+    "release:check": "node scripts/check-release.mjs",
+    "web:dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "check": "tsc --noEmit && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings",
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml --lib --locked -- --include-ignored",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:build:windows": "tauri build --bundles nsis",
+    "tauri:build:windows:all": "tauri build --bundles nsis,msi",
+    "tauri:build:msi": "tauri build --bundles msi",
+    "icons:generate": "tauri icon ./src-tauri/icons/source.png"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "framer-motion": "^13.2.0",
+    "lucide-react": "^1.39.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "reicon-react": "^1.2.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^4.4.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "project": {
+    "name": "QVault",
+    "productType": "Local QQ Space archive desktop application",
+    "stack": [
+      "react",
+      "tailwind-v4",
+      "vite"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "src/styles/main.css"
+    ],
+    "components": [
+      "src/components/ui"
+    ],
+    "assets": [],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "light-dark",
+    "colors": {
+      "primary": "#2878ff",
+      "background": "#f4f7fb / #0f141d",
+      "surface": "#ffffff / #1b222f",
+      "foreground": "#172033 / #f3f6fb",
+      "border": "#e4eaf2 / #293345"
+    },
+    "typography": {
+      "family": "Inter, Noto Sans SC, system-ui, sans-serif",
+      "body": "text-sm leading-7",
+      "metadata": "text-xs"
+    },
+    "spacing": {},
+    "radius": {
+      "card": "rounded-2xl",
+      "media": "rounded-xl"
+    },
+    "shadows": {},
+    "motion": {
+      "loading": "motion-safe:animate-spin",
+      "reducedMotion": "respects prefers-reduced-motion"
+    },
+    "density": "compact"
+  },
+  "components": {
+    "installed": [
+      "button",
+      "card"
+    ],
+    "preferredPrimitives": [
+      "React native semantics",
+      "lucide-react",
+      "project CSS theme tokens"
+    ],
+    "patterns": [
+      "Compact archive stages with real task status",
+      "Feed cards with deferred media and expandable replies"
+    ]
+  },
+  "constraints": {
+    "must": [
+      "Chinese product copy",
+      "Show real archive state and cooldown; do not invent progress percentages",
+      "Preserve local archive data when abandoning a task",
+      "Support narrow screens, keyboard controls, dark mode and reduced motion"
+    ],
+    "avoid": [
+      "Unbounded upstream API concurrency",
+      "New UI dependency stacks",
+      "Mock archive data in production"
+    ]
+  },
+  "decisions": [],
+  "evidence": [
+    {
+      "fact": "components.installed",
+      "source": "src/components/ui"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v4",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:vite",
+      "source": "package.json"
+    },
+    {
+      "fact": "design.tokens and light-dark theme",
+      "source": "src/styles/main.css"
+    },
+    {
+      "fact": "archive stage layout inspiration",
+      "source": "https://21st.dev/@sean0205/components/c-progress-5"
+    },
+    {
+      "fact": "feed card primitives inspiration",
+      "source": "https://21st.dev/@shadcnui-blocks/components/card-06"
+    }
+  ],
+  "generatedAt": "2026-10-05T10:35:57.320Z"
+}

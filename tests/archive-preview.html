@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>归档页面本地验收</title></head>
+<body class="bg-background text-foreground" style="overflow:auto"><div id="root"></div>
+<script type="module">
+  import React from "react";
+  import { createRoot } from "react-dom/client";
+  import { ArchivePage } from "/src/features/archive/ArchivePage.tsx";
+  import { ContactsPage } from "/src/features/contacts/ContactsPage.tsx";
+  import { LibraryPage } from "/src/features/library/LibraryPage.tsx";
+  import { AlbumsPage } from "/src/features/albums/AlbumsPage.tsx";
+  import "/src/styles/main.css";
+
+  const preview = new URLSearchParams(location.search);
+  if (preview.get("theme") === "dark") document.documentElement.classList.add("dark");
+
+  // Does not call account APIs or read credentials; emoticons use Tencent public assets. Never ships in dist.
+  window.isTauri = true;
+  const picture = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#dce5d6"/><path d="M0 400 210 160 340 330 470 210 640 390V480H0Z" fill="#7c9680"/><circle cx="470" cy="100" r="38" fill="#faf0c9"/></svg>');
+  const items = Array.from({length: 45}, (_, i) => ({id: 100-i, cellId: `test-${i}`, publishedAt: 1780300000-i*3600, content: i === 0 ? "那年夏天，和朋友一起走过的小路。\n照片里留下的不只是风景，还有当时的我们。" : i === 1 ? "很长的一段旧日记录。".repeat(60) : `本地验收记录 ${i+1}：用于验证加载更多、正文和评论排版。`, authorName: "测试用户", authorUin: "10000", videoUrls: [], pictureUrls: i===0 ? ["test-a","test-b","test-c"] : [], likeCount: 8, commentCount: 2, likes:[{uin:"10001",nickname:"朋友甲",historical:true,likedAt:1780300000}], comments: [{uin:"10002",nickname:"朋友乙",content:"这张照片好有回忆！",createdAt:1780300300,replies:[{uin:"10003",nickname:"测试用户",content:"还记得那天一起出发的时候。",createdAt:1780300400,replyToUin:null,replyToNickname:null}]}] }));
+  if (preview.get("state") === "media-retry") {
+    items[0].content = "这个软件要笑[em]e400643[/em]我，勇气可嘉[em]e400420[/em]。\n文字与表情应正确排列。";
+    items[0].comments[0].content = "评论表情[em]e10324[/em]";
+    items[0].comments[0].replies[0].content = "回复表情[em]e400420[/em]";
+  }
+  let progress = {mode:"recovery",ownerUin:"10000",status:"paused",stage:"history",active:false,pages:18,fetched:320,saved:320,archived:45,skipped:1,message:"已暂停，已保存数据和各阶段断点",retryAt:null,canResume:true,complete:false};
+  let streamedCount = preview.get("state") === "streaming" ? 0 : items.length;
+  if (preview.get("state") === "streaming") progress = {...progress,mode:"own",stage:"visible",active:true,status:"running",fetched:0,saved:0,archived:0,skipped:0,message:"正在同步本人说说…"};
+  const contacts = Array.from({length:85}, (_, i) => ({uin:String(10001+i), nickname:i===0?"林间晚风":i===1?"一个需要完整显示的很长昵称，测试窄屏排版":"归档联系人 "+(i+1), posts:45, dialoguePosts:i%3===0?12:0, firstAt:i%7===0 && i%3!==0?0:1514764800, lastAt:i%7===0 && i%3!==0?0:1780300000-i*86400, lastMessage:i%3===0?{content:"还记得那天一起出发的时候。",createdAt:1780300000-i*86400}:null}));
+  const videoPreview=Promise.resolve("data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAMBEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHWTbuMU6uEElTDZ1OsggEjTbuMU6uEHFO7a1OsggLr7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsCrXsYMPQkBNgIxMYXZmNjEuNy4xMDBXQYxMYXZmNjEuNy4xMDBEiYhAj0AAAAAAABZUrmvIrgEAAAAAAAA/14EBc8WIPah4QBthIFGcgQAitZyDdW5kiIEAhoVWX1ZQOIOBASPjg4QF9eEA4JCwgaC6gXiagQJVsIRVuYEBElTDZ/tzc59jwIBnyJlFo4dFTkNPREVSRIeMTGF2ZjYxLjcuMTAwc3PWY8CLY8WIPah4QBthIFFnyKFFo4dFTkNPREVSRIeUTGF2YzYxLjE5LjEwMCBsaWJ2cHhnyKFFo4hEVVJBVElPTkSHkzAwOjAwOjAxLjAwMDAwMDAwMAAfQ7Z1QULngQCj04EAAIDQBgCdASqgAHgAAEcIhYWIhYSIAgICdaoCBnMwWNUXlrzhpNc5w0muc4aTXOcNJrnOGk1znDSa5zhpNc5w0fgA/utkXrvFpRr+tr23hhQAo5iBAGQAEQIAARAQABgAGFgv9AAIgIEMsACjmIEAyAARAgABEBAAGAAYWC/0AAiAgQywAKOYgQEsABECAAEQEAAYABhYL/QACICBDLAAo5iBAZAAEQIAARAQABgAGFgv9AAIgIEMsACjmIEB9AARAgABEBAAGAAYWC/0AAiAgQywAKOYgQJYABECAAEQEAAYABhYL/QACICBDLAAo5iBArwAEQIAARAQFGAAYWC/0AAiAgQywACjmIEDIAARAgABEBAAGAAYWC/0AAiAgQywAKOYgQOEABECAAEQEAAYABhYL/QACICBDLAAHFO7a5G7j7OBALeK94EB8YIBo/CBAw==");
+  let snapshotId = 0;
+  let contactFailures = preview.get("state") === "error" ? 2 : 0;
+  let feedFailures = preview.get("state") === "feeds-error" ? 1 : 0;
+  let skips=[{id:1,pageNumber:18,error:"本地模拟网络超时；已保存断点",offsetAdvance:0,retryCount:1,resolvedAt:null}];
+  window.__TAURI_INTERNALS__ = {
+    convertFileSrc: (path) => path.startsWith("data:video/") || path.startsWith("https://qzonestyle.gtimg.cn/") ? path : path === "broken-image" ? "data:image/png;base64,aW52YWxpZA==" : picture,
+    async invoke(command,args={}) {
+      if(command==="list_archive_contacts") {
+        if (contactFailures-- > 0) throw new Error("本地模拟统计读取失败");
+        return {snapshotId:++snapshotId,updatedAt:1780300000,contacts:preview.get("state")==="empty"?[]:contacts};
+      }
+      if(command==="list_contact_feeds") {
+        if (feedFailures-- > 0) throw new Error("本地模拟关联说说读取失败");
+        return {items:items.slice(args.offset,args.offset+args.limit),total:items.length};
+      }
+      if(command==="list_qzone_library_years") return [2026,2025];
+      if(command==="list_qzone_library") {
+        args=args.request;
+        if(args.module==="guestbook" || args.module==="favorites") {
+          if(preview.get("state")==="error") throw new Error("本地模拟资料读取失败");
+          let records=preview.get("state")==="empty"?[]:Array.from({length:49},(_,i)=>({
+            itemKey:`${args.module}-${i}`,parentKey:"",createdAt:i<30?1780300000-i*86400:1749000000-i*86400,
+            title:args.module==="guestbook"?`旧日朋友 ${i+1}`:i===0?"那年夏天留下的长篇记录":i===1?"一张想留住的合影":`收藏记忆 ${i+1}`,
+            summary:i===0?"那年夏天，和朋友一起走过的小路。\n照片里留下的不只是风景，还有当时的我们。\n".repeat(16):`一起出发的那天，我们说好了以后还会常见面。 ${i+1}`,
+            authorName:`旧日朋友 ${i+1}`,authorUin:String(10001+i),source:i>=39?"history":"current",privateMessage:i===1,
+            kind:i===0?"说说":i===1?"照片":"网页",sourceUrl:args.module==="favorites"?"https://user.qzone.qq.com/10000/mood/example":null,
+            mediaUrls:[],images:i===1?Array.from({length:7},(_,j)=>({url:`fixture-original-${j}`,thumbnail:"fixture-cover"})):[],
+            videos:args.module==="favorites" && i===0?[{url:"fixture-video",coverUrl:"fixture-cover",title:"夏日片段"}]:[],
+            audioUrls:[],replies:args.module==="guestbook" && i<39?[{authorName:"空间主人",authorUin:"10000",createdAt:1780300500,content:"还记得那天一起出发的时候。",images:[]}]:[],
+          }));
+          if(args.query) records=records.filter(item=>[item.title,item.summary,item.authorName,item.authorUin].some(value=>value.includes(args.query)));
+          if(args.year) records=records.filter(item=>new Date(item.createdAt*1000).getFullYear()===args.year);
+          if(args.source) records=records.filter(item=>item.source===args.source);
+          return {items:records.slice(args.offset,args.offset+args.limit),total:records.length,remoteTotal:39,complete:true,syncedAt:1780300000};
+        }
+        if(preview.get("state")==="error") throw new Error("本地模拟相册读取失败");
+        const records = preview.get("state")==="empty" ? [] : Array.from({length:49},(_,i)=>({itemKey:`${args.module}-${i}`,parentKey:args.parentKey??"",title:args.module==="albums"?`留在时光里的相册 ${i+1}`:args.module==="videos"?`旧日视频 ${i+1}`:`照片 ${i+1}`,summary:args.module==="albums"?"一个晴朗的午后，与朋友出发。":"",createdAt:1780300000-i*86400,coverUrl:"fixture-cover",mediaUrls:args.module==="albums"?[]:["fixture-original"]}));
+        return {items:records.slice(args.offset,args.offset+args.limit),total:records.length,remoteTotal:records.length,complete:true,syncedAt:1780300000};
+      }
+      if(command==="sync_qzone_library") {
+        progress={...progress,stage:"library",status:"running",taskId:args.taskId,active:true,message:"资料已读取 24 条，继续同步…"};
+        await new Promise(resolve=>setTimeout(resolve,2500));
+        if(progress.status==="paused") throw "ARCHIVE_PAUSED";
+        progress={...progress,active:false};
+        return {message:"同步完成"};
+      }
+      if(command==="load_library_resource") return args.kind==="video"?await videoPreview:"fixture";
+      if(command==="open_recycle_password_window" || command==="close_recycle_password_window") return;
+      if(command==="check_recycle_password") return true;
+      if(command==="list_recycle_resources") {
+        const total=preview.get("state")==="empty"?0:39;
+        const records=Array.from({length:total},(_,i)=>({itemKey:`recycle-${args.kind}-${i}`,title:args.kind==="albums"?`旧相册 ${i+1}`:`曾经的照片 ${i+1}`,coverUrl:"fixture-cover",mediaUrls:args.kind==="albums"?[]:["fixture-original"],deletedAt:"1780300000",count:args.kind==="albums"?12:null}));
+        const items=records.slice(args.offset,args.offset+18);
+        return {items,total,nextOffset:args.offset+items.length,complete:items.length===0};
+      }
+      if(command==="get_archive_progress") {
+        if(preview.get("state")==="streaming") {
+          streamedCount=Math.min(items.length,streamedCount+5);
+          progress={...progress,fetched:streamedCount,saved:progress.saved+5,archived:streamedCount};
+        }
+        return {...progress};
+      }
+      if(command==="list_archived_feeds") {
+        args=args.request;
+        let result=items.slice(0,streamedCount).filter(item=>!args.query || item.content.includes(args.query) || item.authorName.includes(args.query));
+        if(args.beforeTime!==null && args.beforeTime!==undefined) result=result.filter(item=>item.publishedAt<args.beforeTime || (item.publishedAt===args.beforeTime && item.id<args.beforeId));
+        return result.slice(0,args.limit);
+      }
+      if(command==="start_feed_archive") {progress={...progress,mode:args.mode??"own",status:"running",active:true,message:"正在同步历史互动与已删除说说残留…"};return {...progress};}
+      if(command==="cancel_feed_archive") {progress={...progress,status:"paused",active:false,message:"已暂停，已保存数据和各阶段断点"};return;}
+      if(command==="abandon_feed_archive") {progress={...progress,status:"abandoned",active:false,canResume:false,message:"已放弃本次任务，保留已归档内容"};return;}
+      if(command==="list_archive_skips") return skips;
+      if(command==="skip_archive_page") {skips=skips.map(item=>({...item,offsetAdvance:1}));return;}
+      if(command==="retry_archive_skip") {skips=[];progress={...progress,skipped:0};return {success:true,message:"重试成功，已恢复记录"};}
+      if(command==="load_qzone_emoticon") return `https://qzonestyle.gtimg.cn/qzone/em/${args.code}.gif`;
+      if(command==="load_archived_image") {
+        if(preview.get("state")==="media-retry") console.info(`image-cache ${args.forceReload ? "refresh" : "cached"}`);
+        return preview.get("state")==="media-retry" && !args.forceReload ? "broken-image" : "fixture";
+      }
+      throw new Error(`未模拟命令：${command}`);
+    }
+  };
+  createRoot(document.getElementById("root")).render(React.createElement(React.StrictMode,null,
+    React.createElement("div", {className:"mx-auto max-w-6xl p-4 sm:p-8"},
+      React.createElement("p", {className:"mb-6 text-xs text-muted-foreground"},"本地验收 · 仅模拟数据，不会请求 QQ 空间"),
+      ["guestbook","favorites"].includes(preview.get("page")) ? React.createElement(LibraryPage,{module:preview.get("page"),loggedIn:preview.get("state")!=="logged-out",requireLogin:async()=>true}) : preview.get("page")==="albums" ? React.createElement(AlbumsPage,{loggedIn:preview.get("state")!=="logged-out",requireLogin:async()=>true}) : preview.get("page")==="contacts"
+        ? React.createElement(ContactsPage,{ownerUin:preview.get("state")==="logged-out"?null:"10000",requireLogin:async()=>true})
+        : React.createElement(ArchivePage,{loggedIn:true,requireLogin:async()=>true})
+    )
+  ));
+</script></body></html>

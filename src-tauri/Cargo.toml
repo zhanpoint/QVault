@@ -1,0 +1,42 @@
+[package]
+name = "QVault"
+version = "1.0.3"
+description = "将 QQ 空间动态、照片、视频与互动记录安全归档到本地"
+authors = ["Ehre"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "qvault_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset", "tray-icon", "image-ico"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+regex = "1"
+scraper = { version = "0.27", default-features = false }
+rusqlite = { version = "0.32", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["cookies", "json", "rustls-tls"] }
+tokio = { version = "1", features = ["sync", "time", "fs", "io-util", "macros", "rt"] }
+tempfile = "3"
+cookie = "0.18"
+encoding_rs = "0.8"
+keyring = "4.2"
+url = "2"
+httpdate = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.38.2"
+windows = "0.61.3"
