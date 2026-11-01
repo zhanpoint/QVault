@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 const config = JSON.parse(read('src-tauri/tauri.conf.json'));
+for (const icon of ['icons/128x128.png', 'icons/icon.ico', 'icons/icon.icns']) {
+  assert.ok(config.bundle.icon?.includes(icon), `Missing bundle icon: ${icon}`);
+}
+for (const icon of config.bundle.icon) {
+  assert.ok(existsSync(new URL(`../src-tauri/${icon}`, import.meta.url)), `Bundle icon does not exist: ${icon}`);
+}
 const cargo = read('src-tauri/Cargo.toml').split(/^\[/m).find((section) => section.startsWith('package]'));
 const rustVersion = cargo?.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
 const cargoLock = read('src-tauri/Cargo.lock').split('[[package]]')
