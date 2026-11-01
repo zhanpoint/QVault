@@ -1,7 +1,7 @@
 {
   "name": "QVault",
   "private": true,
-  "version": "1.0.3",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "release:check": "node scripts/check-release.mjs",
