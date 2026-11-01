@@ -140,51 +140,7 @@ export function ArchivePage({
                   : startLabel}
               </Button>
             )}
-            {!active && (
-              <details className="relative" onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.currentTarget.open = false;
-                  event.currentTarget.querySelector("summary")?.focus();
-                }
-              }}>
-                <summary className="cursor-pointer rounded-lg px-3 py-2 text-sm text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">更多选项</summary>
-                <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-border bg-surface p-3 shadow-lg">
-                  <Button variant="ghost" className="h-auto w-full justify-start whitespace-normal text-left" disabled={busy || remaining > 0}
-                    onClick={(event) => {
-                      const details = event.currentTarget.closest("details");
-                      if (details) details.open = false;
-                      void archive.action("start_feed_archive", { intervalMs: 2000, mode: recovery ? "own" : "recovery" });
-                    }}>
-                    {recovery ? "归档当前说说" : "查找更早的说说"}
-                  </Button>
-                  <p className="px-3 pb-2 pt-1 text-xs leading-5 text-muted-foreground">
-                    {recovery ? "保存空间里目前可见的本人说说。" : "从历史通知查找可能已删除的内容，耗时较长，不保证完整恢复。"}
-                  </p>
-                </div>
-              </details>
-            )}
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 divide-x divide-border border-t border-border sm:grid-cols-4">
-          {[
-            { label: "任务状态", value: status },
-            { label: "已归档说说", value: progress?.archived ?? 0 },
-            {
-              label: recovery ? "已扫描通知" : "已读取说说",
-              value: progress?.fetched ?? 0,
-            },
-            { label: "待补充位置", value: progress?.skipped ?? 0 },
-          ].map(({ label, value }) => (
-            <div key={label} className="px-5 py-4 sm:px-6">
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p
-                className={`mt-2 text-lg font-semibold tabular-nums ${label === "任务状态" ? "text-primary" : ""}`}
-              >
-                {typeof value === "number" ? value.toLocaleString() : value}
-              </p>
-            </div>
-          ))}
         </div>
 
         {progress?.message && (

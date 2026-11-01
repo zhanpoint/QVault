@@ -299,11 +299,6 @@ export function LibraryPage(props: PageProps) {
           </p>
         </div>
       </header>
-      {!guestbook && (
-        <p className="text-xs leading-6 text-muted-foreground">
-          这里读取 QQ 空间的空间收藏。手机 QQ 的通用收藏属于另一份数据，不在此接口中。
-        </p>
-      )}
       {!isTauri() ? (
         <EmptyState
           icon={Icon}

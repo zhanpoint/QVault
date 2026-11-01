@@ -27,6 +27,12 @@ pub(super) async fn run_feed_archive(
         finalize_archive(&mut db, &owner, complete, abandon)
     })
     .await?;
+    if complete {
+        set_progress(&archive, |p| {
+            p.mode = ArchiveMode::Recovery;
+        });
+        return run_recovery_archive(app, login, archive, session).await;
+    }
     set_progress(&archive, |p| {
         p.complete = complete;
         p.retry_at = None;
