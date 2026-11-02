@@ -1,6 +1,6 @@
 [package]
 name = "QVault"
-version = "0.1.0"
+version = "0.1.1"
 description = "将 QQ 空间动态、照片、视频与互动记录安全归档到本地"
 authors = ["Ehre"]
 edition = "2021"
@@ -36,7 +36,3 @@ httpdate = "1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["test-util"] }
-
-[target.'cfg(windows)'.dependencies]
-webview2-com = "0.38.2"
-windows = "0.61.3"

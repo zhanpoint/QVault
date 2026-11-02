@@ -10,6 +10,8 @@ import {
   ArrowLeft,
   CalendarDays,
   ChevronRight,
+  ChevronDown,
+  Check,
   CircleAlert,
   LoaderCircle,
   MessageCircle,
@@ -17,6 +19,7 @@ import {
   Search,
   Users,
 } from "lucide-react";
+import * as Select from "@radix-ui/react-select";
 import { QzoneText } from "../../components/QzoneText";
 import { Button } from "../../components/ui/button";
 import { ArchiveCard } from "../archive/ArchiveCard";
@@ -79,7 +82,7 @@ function ContactProfile({
       : [];
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+    <div className="rounded-2xl border border-border bg-surface p-4">
       <Button
         variant="ghost"
         className="mb-4 -ml-3 h-8 text-xs lg:hidden"
@@ -88,7 +91,8 @@ function ContactProfile({
         <ArrowLeft size={14} />
         返回联系人
       </Button>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+      <div className="flex min-w-0 items-center gap-3">
         <Avatar contact={contact} />
         <div className="min-w-0">
           <h2 className="break-words text-lg font-semibold">
@@ -97,10 +101,10 @@ function ContactProfile({
           <p className="mt-1 text-xs text-muted-foreground">QQ {contact.uin}</p>
         </div>
       </div>
-      <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-4">
+      <dl className="flex flex-wrap gap-x-6 gap-y-2">
         <div>
           <dt className="text-xs text-muted-foreground">共同留下的说说</dt>
-          <dd className="mt-1.5 text-2xl font-semibold tabular-nums">
+          <dd className="mt-1 text-lg font-semibold tabular-nums">
             {number.format(contact.posts)}
             <span className="ml-1.5 text-xs font-normal text-muted-foreground">
               条
@@ -113,7 +117,7 @@ function ContactProfile({
               <MessageCircle size={13} />
               其中有来有回
             </dt>
-            <dd className="mt-1.5 text-2xl font-semibold tabular-nums">
+            <dd className="mt-1 text-lg font-semibold tabular-nums">
               {number.format(contact.dialoguePosts)}
               <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                 条
@@ -122,8 +126,9 @@ function ContactProfile({
           </div>
         )}
       </dl>
+      </div>
       {message && (
-        <blockquote className="mt-5 border-l-2 border-primary/30 pl-4">
+        <blockquote className="mt-3 border-l-2 border-primary/30 pl-3">
           <p className="text-xs text-muted-foreground">
             TA 留下的话
             {message.createdAt > 0 && (
@@ -148,7 +153,7 @@ function ContactProfile({
         </blockquote>
       )}
       {dates.length > 0 && (
-        <dl className="mt-5 grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
+        <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3">
           {dates.map(({ label, time }) => (
             <div key={label} className="flex items-start gap-2">
               <CalendarDays
@@ -251,11 +256,11 @@ export function ContactsPage({
     );
   } else if (data.directory) {
     content = (
-      <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-0 gap-5 lg:flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
         {/* Compact person rows adapted from 21st's Item List with Actions. */}
         <aside
           aria-label="归档联系人列表"
-          className={`${selected ? "hidden lg:block" : ""} overflow-hidden rounded-2xl border border-border bg-surface lg:sticky lg:top-0`}
+          className={`${selected ? "hidden lg:flex" : "flex"} min-h-0 flex-col rounded-2xl border border-border bg-surface`}
         >
           <div className="space-y-3 border-b border-border p-4">
             <label className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
@@ -271,19 +276,28 @@ export function ContactsPage({
             </label>
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>{number.format(filtered.length)} 位联系人</span>
-              <select
-                aria-label="联系人排序"
-                value={sort}
-                onChange={(event) => setSort(event.target.value as Sort)}
-                className="max-w-40 rounded-md border border-border bg-surface px-2 py-1.5 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-primary"
-              >
-                <option value="posts">共同说说最多</option>
-                <option value="lastAt">最近有互动</option>
-              </select>
+              <Select.Root value={sort} onValueChange={(value) => setSort(value as Sort)}>
+                <Select.Trigger aria-label="联系人排序" className="inline-flex h-9 w-36 items-center justify-between gap-2 rounded-md border border-border bg-background px-3 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+                  <Select.Value />
+                  <Select.Icon><ChevronDown size={14} /></Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content position="popper" sideOffset={4} className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-surface p-1 text-foreground shadow-lg">
+                    <Select.Viewport>
+                      {([{ value: "posts", label: "共同说说最多" }, { value: "lastAt", label: "最近有互动" }] as const).map((option) => (
+                        <Select.Item key={option.value} value={option.value} className="relative flex cursor-default select-none items-center rounded px-3 py-2 pr-8 text-xs outline-none data-[highlighted]:bg-muted">
+                          <Select.ItemText>{option.label}</Select.ItemText>
+                          <Select.ItemIndicator className="absolute right-2 text-primary"><Check size={14} /></Select.ItemIndicator>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
             </div>
           </div>
           <div
-            className="max-h-[65vh] overflow-y-auto p-2"
+            className="app-scroll max-h-[65vh] min-h-0 p-2 lg:max-h-none lg:flex-1"
             aria-busy={data.loading}
           >
             {filtered.slice(0, visible).map((contact) => (
@@ -331,21 +345,24 @@ export function ContactsPage({
         </aside>
         <div
           id="contact-detail"
-          className={`min-w-0 space-y-5 ${selected ? "" : "hidden lg:block"}`}
+          className={`min-h-0 min-w-0 lg:flex lg:flex-col lg:gap-5 ${selected ? "" : "hidden"}`}
         >
           {selected ? (
             <>
+              <div className="mb-5 lg:mb-0 lg:max-h-[45%] lg:shrink-0 lg:overflow-y-auto">
               <ContactProfile
                 key={selected.uin}
                 contact={selected}
                 back={() => data.select(null)}
               />
-              <div>
+              </div>
+              <div className="mb-5 lg:mb-0 lg:shrink-0">
                 <h3 className="text-sm font-semibold">一起留下的回忆</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   回到当时的说说，看看原来的留言与回复。
                 </p>
               </div>
+              <div key={selected.uin} className="app-scroll min-h-0 space-y-4 lg:flex-1 lg:pr-2">
               {data.feeds.map((item) => (
                 <ArchiveCard key={item.id} item={item} />
               ))}
@@ -392,6 +409,7 @@ export function ContactsPage({
                   加载更多说说
                 </Button>
               )}
+              </div>
             </>
           ) : (
             <Empty title="选一个人，回看当年的记录">
@@ -404,7 +422,7 @@ export function ContactsPage({
   }
 
   return (
-    <section className="mx-auto max-w-6xl space-y-5">
+    <section className="mx-auto max-w-6xl space-y-5 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:space-y-0 lg:gap-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight">
@@ -445,7 +463,7 @@ export function ContactsPage({
       )}
       {content}
       {data.directory && (
-        <details className="text-xs leading-6 text-muted-foreground">
+        <details className="shrink-0 text-xs leading-6 text-muted-foreground">
           <summary className="w-fit cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-primary">
             关于这些记录
           </summary>

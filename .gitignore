@@ -5,6 +5,8 @@ node_modules/
 dist/
 **/target/
 **/build/
+/.tmp/
+/.npm-cache/
 **/.gradle/
 **/.cxx/
 **/captures/

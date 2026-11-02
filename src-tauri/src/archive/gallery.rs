@@ -1,15 +1,8 @@
 //! Album resources have separate cover and playable/original media contracts.
-use super::{
-    blocking, media,
-    runtime::{Control, Session},
-    ArchiveState,
-};
-use crate::commands::{
-    qlogin::QLoginState,
-    qzone::{self, QzonePageTokenState, RecycleAuthState},
-};
+use super::{blocking, media, ArchiveState};
+use crate::commands::{qlogin::QLoginState, qzone::QzonePageTokenState};
 use reqwest::header::{COOKIE, REFERER, USER_AGENT};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 use tauri::Manager;
 use url::Url;
@@ -71,172 +64,6 @@ pub(super) fn resource_media(module: &str, raw: &Value) -> (Option<String>, Vec<
             )
         }
     }
-}
-
-#[derive(Clone, Copy, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum RecycleKind {
-    Albums,
-    Photos,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecycleItem {
-    item_key: String,
-    parent_key: String,
-    title: String,
-    cover_url: Option<String>,
-    media_urls: Vec<String>,
-    deleted_at: String,
-    count: Option<u64>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecyclePage {
-    items: Vec<RecycleItem>,
-    next_offset: usize,
-    complete: bool,
-    total: Option<u64>,
-}
-
-fn recycle_page(
-    kind: RecycleKind,
-    mut response: Value,
-    offset: usize,
-    parent: &str,
-) -> Result<RecyclePage, String> {
-    let data = if response.get("data").is_some() {
-        response.get_mut("data").unwrap()
-    } else {
-        &mut response
-    };
-    let albums = matches!(kind, RecycleKind::Albums);
-    // These fields are used by the supplied Qzone-Restore-Archive reader.
-    // Unknown structures are errors rather than a fabricated empty recycle bin.
-    let fields: &[&str] = if albums {
-        &["album", "albums", "albumList"]
-    } else {
-        &["photo", "photos", "photoList", "list"]
-    };
-    let name = fields
-        .iter()
-        .find(|name| data.get(**name).is_some_and(Value::is_array))
-        .ok_or("回收站响应缺少有效列表字段，请在 QQ 空间确认访问权限")?;
-    let total = data
-        .get("total")
-        .or_else(|| data.get("totalNum"))
-        .map(|total| {
-            total
-                .as_u64()
-                .or_else(|| total.as_str()?.parse().ok())
-                .ok_or("回收站总数字段无效")
-        })
-        .transpose()?;
-    let raw = std::mem::take(data.get_mut(*name).and_then(Value::as_array_mut).unwrap());
-    let next_offset = offset.checked_add(raw.len()).ok_or("回收站分页偏移溢出")?;
-    let complete = super::library::library_page_complete(
-        next_offset,
-        raw.len(),
-        total.and_then(|n| usize::try_from(n).ok()),
-    )?;
-    let items = raw
-        .into_iter()
-        .map(|item| {
-            let item_key = super::library::value_text(
-                &item,
-                if albums {
-                    &["albumid", "albumId", "id"]
-                } else {
-                    &["lloc", "photoId", "photoid", "id"]
-                },
-            )
-            .ok_or("回收站记录缺少资源标识，分页未推进")?;
-            let (cover_url, media_urls) =
-                resource_media(if albums { "albums" } else { "photos" }, &item);
-            Ok(RecycleItem {
-                item_key,
-                parent_key: super::library::value_text(&item, &["albumid", "albumId"])
-                    .unwrap_or_else(|| parent.to_owned()),
-                title: super::library::value_text(
-                    &item,
-                    &["name", "albumname", "photoName", "title"],
-                )
-                .unwrap_or_else(|| {
-                    if albums {
-                        "未命名相册"
-                    } else {
-                        "未命名照片"
-                    }
-                    .into()
-                }),
-                cover_url,
-                media_urls,
-                deleted_at: super::library::value_text(
-                    &item,
-                    &["deleteTime", "deltime", "modifytime"],
-                )
-                .unwrap_or_default(),
-                count: super::library::value_text(&item, &["num", "photoNum", "total"])
-                    .and_then(|n| n.parse().ok()),
-            })
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-    Ok(RecyclePage {
-        items,
-        next_offset,
-        complete,
-        total,
-    })
-}
-
-#[tauri::command]
-pub async fn list_recycle_resources(
-    app: tauri::AppHandle,
-    login: tauri::State<'_, QLoginState>,
-    archive: tauri::State<'_, ArchiveState>,
-    recycle: tauri::State<'_, RecycleAuthState>,
-    kind: RecycleKind,
-    offset: usize,
-    album_id: Option<String>,
-) -> Result<RecyclePage, String> {
-    // Serialize upstream list reads with the same task lock and rate budget as archiving.
-    let _task = archive
-        .task
-        .clone()
-        .try_lock_owned()
-        .map_err(|_| "已有同步任务正在执行，请稍后读取回收站")?;
-    let auth = login.qzone_auth().await?;
-    let signature = recycle.signature(&auth.cookie_header)?;
-    let (_control, receiver) = tokio::sync::watch::channel(Control::Run);
-    let session = Session::new(
-        app,
-        auth.uin.clone(),
-        receiver,
-        archive.requests.clone(),
-        2_000,
-    );
-    let response = session
-        .network(qzone::fetch_recycle_page(
-            &login,
-            matches!(kind, RecycleKind::Albums),
-            &signature,
-            offset,
-            album_id.as_deref(),
-            &session,
-        ))
-        .await?;
-    let current = login.qzone_auth().await?;
-    if current.cookie_header != auth.cookie_header {
-        return Err("登录会话已变化，请重新读取回收站".into());
-    }
-    recycle_page(
-        kind,
-        response,
-        offset,
-        album_id.as_deref().unwrap_or_default(),
-    )
 }
 
 #[derive(Clone, Copy, Deserialize)]
@@ -388,26 +215,6 @@ mod tests {
             ["https://a.qpic.cn/original"]
         );
         assert!(resource_media("albums", &raw).1.is_empty());
-    }
-    #[test]
-    fn recycle_short_pages_keep_paging_and_invalid_contracts_fail() {
-        let page = recycle_page(
-            RecycleKind::Photos,
-            json!({"data":{"photo":[{"lloc":"p1"}],"total":80}}),
-            36,
-            "album",
-        )
-        .unwrap();
-        assert_eq!(page.next_offset, 37);
-        assert!(!page.complete);
-        assert!(recycle_page(RecycleKind::Photos, json!({"data":{"unknown":[]}}), 0, "").is_err());
-        assert!(recycle_page(
-            RecycleKind::Photos,
-            json!({"data":{"photo":[],"total":80}}),
-            36,
-            ""
-        )
-        .is_err());
     }
     #[test]
     fn rejects_media_hosts_that_only_share_a_suffix() {

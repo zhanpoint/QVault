@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "QVault"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64 0.22.1",
  "cookie",
@@ -22,8 +22,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "url",
- "webview2-com",
- "windows",
 ]
 
 [[package]]

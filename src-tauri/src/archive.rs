@@ -43,7 +43,6 @@ async fn blocking<T: Send + 'static>(
 #[serde(rename_all = "lowercase")]
 pub enum ArchiveMode {
     #[default]
-    Own,
     Recovery,
 }
 
@@ -71,9 +70,9 @@ impl Default for ArchiveProgress {
     fn default() -> Self {
         Self {
             owner_uin: None,
-            mode: ArchiveMode::Own,
+            mode: ArchiveMode::Recovery,
             task_id: None,
-            stage: "visible",
+            stage: "history",
             active: false,
             status: "idle",
             pages: 0,
@@ -1315,55 +1314,6 @@ fn concise_archive_error(error: &str) -> String {
     }
 }
 
-async fn sync_visible_moments(
-    app: &tauri::AppHandle,
-    login: &QLoginState,
-    archive: &ArchiveState,
-    session: &Session,
-) -> Result<(), String> {
-    let app_copy = app.clone();
-    let owner = session.owner.clone();
-    let mut saved = blocking(move || checkpoint::load(&app_copy, &owner, "visible")).await?;
-    if saved.complete {
-        saved = checkpoint::StageCheckpoint::default();
-    }
-    set_progress(archive, |p| {
-        p.pages = saved.pages;
-        p.fetched = saved.records;
-        p.saved = saved.saved;
-        p.stage = "visible";
-        p.message = "正在同步本人说说、评论和回复…".into();
-    });
-    while !saved.complete {
-        session.check()?;
-        let pos = saved.offset;
-        let page = session
-            .network(qzone::fetch_visible_moments(login, pos, 30, Some(session)))
-            .await?;
-        saved.total = page.total.unwrap_or(saved.total);
-        if saved.owner_name.is_none() {
-            saved.owner_name = page
-                .feeds
-                .iter()
-                .find_map(|feed| text_at(feed, "/original/cell_userinfo/user/nickname"));
-        }
-        saved.pages += 1;
-        saved.records += page.moment_count as u64;
-        saved.offset = page.next_pos;
-        saved.complete = !page.has_more;
-        let fetched = page.moment_count as u64;
-        let previous = saved.saved;
-        saved = checkpoint::save(app, &session.owner, "visible", page.feeds, saved).await?;
-        set_progress(archive, |p| {
-            p.pages += 1;
-            p.fetched += fetched;
-            p.saved += saved.saved - previous;
-            p.message = format!("本人说说已同步 {} / {} 条", saved.records, saved.total);
-        });
-    }
-    Ok(())
-}
-
 async fn sync_history_messages(
     app: &tauri::AppHandle,
     login: &QLoginState,
@@ -1434,7 +1384,6 @@ pub async fn start_feed_archive(
     login: tauri::State<'_, QLoginState>,
     archive: tauri::State<'_, ArchiveState>,
     interval_ms: u64,
-    mode: Option<ArchiveMode>,
 ) -> Result<ArchiveProgress, String> {
     let permit = archive
         .task
@@ -1450,7 +1399,7 @@ pub async fn start_feed_archive(
         archive.requests.clone(),
         interval_ms,
     );
-    let mode = mode.unwrap_or_default();
+    let mode = ArchiveMode::Recovery;
     let initial = ArchiveProgress {
         owner_uin: Some(owner),
         mode,
@@ -1467,7 +1416,6 @@ pub async fn start_feed_archive(
             app.state::<QLoginState>(),
             state.clone(),
             session,
-            mode,
         )
         .await;
         if let Err(error) = result {
@@ -1522,20 +1470,11 @@ pub async fn get_archive_progress(
                 |r| r.get(0),
             )
             .map_err(|e| format!("统计归档失败：{e}"))?;
-        progress.skipped = if progress.mode == ArchiveMode::Recovery { read_unresolved_skip_count(&db, &owner)? } else { 0 };
+        progress.skipped = read_unresolved_skip_count(&db, &owner)?;
         if !progress.active {
-            progress.complete = progress.mode == ArchiveMode::Own && load_archive_completion(&db, &owner)?;
-            let (pages, records, saved, can_resume) = match progress.mode {
-                ArchiveMode::Own => {
-                    let visible = checkpoint::read(&db, &owner, "visible")?;
-                    (visible.pages, visible.records, visible.saved,
-                        visible.pages > 0 && !visible.complete)
-                }
-                ArchiveMode::Recovery => {
-                    let history = checkpoint::read(&db, &owner, "history")?;
-                    (history.pages, history.records, history.saved, history.pages > 0)
-                }
-            };
+            progress.complete = false;
+            let history = checkpoint::read(&db, &owner, "history")?;
+            let (pages, records, saved, can_resume) = (history.pages, history.records, history.saved, history.pages > 0);
             progress.can_resume = can_resume;
             if progress.pages == 0 {
                 progress.pages = pages;

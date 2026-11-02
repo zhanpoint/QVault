@@ -8,7 +8,6 @@ export type ResourceItem = {
   createdAt?: number;
   coverUrl?: string | null;
   mediaUrls: string[];
-  deletedAt?: string;
   count?: number | null;
   source?: "current" | "history";
   authorUin?: string | null;

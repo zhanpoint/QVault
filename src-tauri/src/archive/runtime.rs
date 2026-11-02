@@ -50,7 +50,6 @@ pub struct Session {
     control: watch::Receiver<Control>,
     gate: Arc<RequestGate>,
     interval: Duration,
-    visible_endpoint: Arc<AtomicUsize>,
     page_token: Arc<tokio::sync::OnceCell<Option<String>>>,
 }
 
@@ -68,7 +67,6 @@ impl Session {
             control,
             gate,
             interval: Duration::from_millis(interval_ms.clamp(2_000, 30_000)),
-            visible_endpoint: Arc::new(AtomicUsize::new(2)),
             page_token: Arc::new(tokio::sync::OnceCell::new()),
         }
     }
@@ -78,14 +76,6 @@ impl Session {
         fetch: impl Future<Output = Result<Option<String>, String>>,
     ) -> Result<Option<String>, String> {
         self.page_token.get_or_try_init(|| fetch).await.cloned()
-    }
-
-    pub fn visible_endpoint(&self) -> Option<usize> {
-        let index = self.visible_endpoint.load(Ordering::Relaxed);
-        (index < 2).then_some(index)
-    }
-    pub fn select_visible_endpoint(&self, index: usize) {
-        self.visible_endpoint.store(index, Ordering::Relaxed);
     }
 
     pub fn check(&self) -> Result<(), String> {

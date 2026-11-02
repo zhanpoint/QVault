@@ -1,7 +1,7 @@
 {
   "name": "QVault",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "release:check": "node scripts/check-release.mjs",
@@ -17,6 +17,7 @@
     "icons:generate": "tauri icon ./src-tauri/icons/source.png"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.4.1",
     "@tauri-apps/api": "^2.11.1",
     "framer-motion": "^13.2.0",
     "lucide-react": "^1.39.0",

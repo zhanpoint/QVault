@@ -2,16 +2,12 @@ import { useState } from "react";
 import {
   Archive,
   ArrowDown,
-  Check,
   CircleAlert,
-  Clock3,
-  Database,
   LoaderCircle,
   Pause,
   Play,
   RefreshCw,
   Search,
-  ShieldCheck,
   X,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -47,18 +43,15 @@ export function ArchivePage({
   const stopping =
     progress?.status === "pausing" || progress?.status === "abandoning";
   const status = statuses[progress?.status ?? "idle"] ?? "待处理";
-  const recovery = progress?.mode === "recovery";
   const needsLogin = progress?.status === "auth_required";
   const startLabel = needsLogin
     ? "重新登录"
-    : progress?.complete
-      ? "归档新说说"
-      : progress?.status === "error"
-        ? recovery ? "继续查找" : "重试归档"
+    : progress?.status === "error"
+        ? "继续查找"
         : progress?.canResume ||
             progress?.status === "paused" ||
             progress?.status === "limited"
-          ? recovery ? "继续查找" : "继续归档"
+          ? "继续查找"
           : "开始归档";
 
   return (
@@ -75,28 +68,6 @@ export function ArchivePage({
             保存动态与互动，让每一次回望都有迹可循。
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground">
-          <ShieldCheck size={14} />
-          数据保存在本机
-        </span>
-      </header>
-
-      <div className="rounded-2xl border border-border bg-surface">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span
-              className={`grid size-10 place-items-center rounded-xl ${active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
-            >
-              {active ? (
-                <LoaderCircle size={20} className="motion-safe:animate-spin" />
-              ) : progress?.complete ? (
-                <Check size={20} />
-              ) : (
-                <Database size={20} />
-              )}
-            </span>
-            <h2 className="font-semibold">{recovery ? "历史说说查找" : "说说归档"}</h2>
-          </div>
           <div className="flex flex-wrap items-center gap-2">
             {(active || progress?.canResume) && (
               <Button
@@ -123,7 +94,6 @@ export function ArchivePage({
                 onClick={() =>
                   void archive.action("start_feed_archive", {
                     intervalMs: 2000,
-                    mode: recovery && !progress?.complete ? "recovery" : "own",
                   })
                 }
               >
@@ -141,18 +111,7 @@ export function ArchivePage({
               </Button>
             )}
           </div>
-        </div>
-
-        {progress?.message && (
-          <div
-            className="flex items-start gap-2 border-t border-border bg-muted/30 px-5 py-3 text-xs leading-5 text-muted-foreground"
-            role="status"
-          >
-            <Clock3 size={14} className="mt-0.5 shrink-0" />
-            <p className="break-words">{progress.message}</p>
-          </div>
-        )}
-      </div>
+      </header>
 
       {confirmAbandon && (
         <div
@@ -179,16 +138,16 @@ export function ArchivePage({
           </div>
         </div>
       )}
-      {archive.error && (
+      {(archive.error || (progress?.status === "error" || progress?.status === "auth_required") && progress.message) && (
         <div
           role="alert"
           className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/5 p-4 text-sm text-red-500"
         >
           <CircleAlert size={17} className="mt-0.5 shrink-0" />
-          <p className="break-words">{archive.error}</p>
+          <p className="break-words">{archive.error || progress?.message}</p>
         </div>
       )}
-      {recovery && Boolean(progress?.skipped) && (
+      {Boolean(progress?.skipped) && (
         <ArchiveRetries
           requireLogin={requireLogin}
           disabled={active || busy || remaining > 0}
@@ -226,11 +185,43 @@ export function ArchivePage({
           </Button>
         </div>
       </div>
-      <div className="space-y-4" aria-busy={loading}>
-        {items.map((item) => (
-          <ArchiveCard key={item.id} item={item} />
+      <div className="flex flex-col md:grid md:grid-cols-2 md:items-start md:gap-4" aria-busy={loading}>
+        {[0, 1].map((column) => (
+          <div key={column} className="contents md:block">
+            {items.map((item, index) => index % 2 === column && (
+              <div key={item.id} className="mb-4" style={{ order: index }}>
+                <ArchiveCard item={item} />
+              </div>
+            ))}
+          </div>
         ))}
       </div>
+      {active && !items.length && !archive.query && (
+        <div className="grid max-h-[65vh] grid-cols-1 gap-4 overflow-hidden md:grid-cols-2" aria-hidden="true">
+        {Array.from({ length: 8 }, (_, item) => (
+          <div key={item} aria-hidden="true" className="rounded-2xl border border-border bg-surface p-5 motion-safe:animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-muted" />
+              <div className="space-y-2">
+                <div className="h-3 w-24 rounded bg-muted" />
+                <div className="h-2.5 w-32 rounded bg-muted" />
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              <div className="h-3 w-full rounded bg-muted" />
+              <div className="h-3 w-4/5 rounded bg-muted" />
+              <div className="h-32 rounded-xl bg-muted" />
+            </div>
+          </div>
+        ))}
+        </div>
+      )}
+      {active && (
+        <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground" role="status">
+          <LoaderCircle size={16} className="motion-safe:animate-spin" />
+          正在归档说说…
+        </p>
+      )}
       {loading && (
         <p
           className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground"
@@ -251,7 +242,7 @@ export function ArchivePage({
           加载更多
         </Button>
       )}
-      {!loading && !items.length && (
+      {!loading && !items.length && (!active || Boolean(archive.query)) && (
         <div className="grid place-items-center rounded-2xl border border-dashed border-border bg-surface px-5 py-14 text-center">
           <span className="grid size-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
             <Archive size={23} />

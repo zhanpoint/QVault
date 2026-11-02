@@ -1,6 +1,6 @@
 export type ArchiveProgress = {
   ownerUin: string | null;
-  mode: "own" | "recovery";
+  mode: "recovery";
   stage: "visible" | "history" | "interactions" | "finalizing" | "library";
   active: boolean;
   status: string;

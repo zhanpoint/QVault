@@ -14,11 +14,6 @@ pub struct StageCheckpoint {
     pub complete: bool,
 }
 
-pub fn load(app: &tauri::AppHandle, owner: &str, stage: &str) -> Result<StageCheckpoint, String> {
-    let db = super::open_database(app)?;
-    read(&db, owner, stage)
-}
-
 pub(super) fn read(db: &Connection, owner: &str, stage: &str) -> Result<StageCheckpoint, String> {
     let snapshot: Option<String> = db
         .query_row(

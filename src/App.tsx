@@ -396,7 +396,7 @@ function AppShell() {
                 />
               </MobileSidebar>
             </header>
-            <main className="app-scroll flex-1 p-4 sm:p-7">
+            <main className={`min-h-0 flex-1 p-4 sm:p-7 ${path === "/contacts" ? "overflow-y-auto lg:overflow-hidden" : "app-scroll"}`}>
               {path === "/" ? (
                 <Dashboard />
               ) : path === "/archives" ? (

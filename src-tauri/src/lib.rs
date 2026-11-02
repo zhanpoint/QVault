@@ -56,7 +56,6 @@ pub fn run() {
         .manage(commands::archive::ArchiveState::new())
         .manage(commands::archive::contacts::ContactsState::default())
         .manage(commands::qlogin::QLoginState::new())
-        .manage(commands::qzone::RecycleAuthState::default())
         .manage(commands::qzone::QzonePageTokenState::default())
         .on_window_event(|_window, _event| {
             #[cfg(desktop)]
@@ -72,10 +71,6 @@ pub fn run() {
             commands::qlogin::poll_qr_login,
             commands::qlogin::get_login_status,
             commands::qlogin::logout_qzone,
-            commands::qzone::open_recycle_password_window,
-            commands::qzone::check_recycle_password,
-            commands::qzone::close_recycle_password_window,
-            commands::archive::gallery::list_recycle_resources,
             commands::archive::gallery::load_library_resource,
             commands::archive::start_feed_archive,
             commands::archive::get_archive_progress,

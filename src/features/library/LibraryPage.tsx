@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { Button } from "../../components/ui/button";
 import { FavoriteCard, GuestbookCard } from "./ContentCards";
 import { EmptyState, ErrorNotice, Pager } from "./LibraryUI";
@@ -21,6 +22,27 @@ type PageProps = {
   requireLogin: () => Promise<boolean>;
 };
 
+function PageHeader({ module, actions }: { module: ContentModule; actions?: ReactNode }) {
+  const guestbook = module === "guestbook";
+  const Icon = guestbook ? MessageCircle : Star;
+  return (
+    <header className="flex flex-wrap items-start justify-between gap-3 py-1">
+      <div className="flex items-center gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+          <Icon size={23} />
+        </span>
+        <div>
+          <h1 className="m-0 text-xl font-bold tracking-tight">{guestbook ? "留言板" : "收藏"}</h1>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {guestbook ? "留下的话，和当时回应它的人。" : "把舍不得忘记的内容，重新放回手边。"}
+          </p>
+        </div>
+      </div>
+      {actions}
+    </header>
+  );
+}
+
 function Records({ module, loggedIn, requireLogin }: PageProps) {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -28,7 +50,6 @@ function Records({ module, loggedIn, requireLogin }: PageProps) {
   const [source, setSource] = useState<"current" | "history" | null>(null);
   const [years, setYears] = useState<number[]>([]);
   const [yearsError, setYearsError] = useState("");
-  const [refresh, setRefresh] = useState(0);
   const resources = useResources(module, null, loggedIn, requireLogin, {
     query,
     year,
@@ -54,7 +75,7 @@ function Records({ module, loggedIn, requireLogin }: PageProps) {
     return () => {
       cancelled = true;
     };
-  }, [loadYears, data?.syncedAt, refresh]);
+  }, [loadYears, data?.syncedAt]);
   const reset = () => {
     setSearch("");
     setQuery("");
@@ -65,48 +86,19 @@ function Records({ module, loggedIn, requireLogin }: PageProps) {
   const Icon = module === "guestbook" ? MessageCircle : Star;
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-5 py-4">
-        <div>
-          <p className="m-0 text-sm font-semibold">
-            {data
-              ? `${filtered ? "匹配" : "本地保存"} ${data.total} 条记录`
-              : "正在读取本地记录"}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            {data?.syncedAt
-              ? `${data.complete ? "同步完成" : "同步未完成，可继续"} · ${new Date(data.syncedAt * 1000).toLocaleString("zh-CN")}`
-              : "同步会保存记录，已保存的内容可从本地浏览。"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {syncing ? (
-            <Button variant="outline" onClick={() => void resources.pause()}>
-              <Pause size={15} />
-              暂停同步
-            </Button>
-          ) : (
-            <Button disabled={loading} onClick={() => void resources.sync()}>
-              <RefreshCw size={15} />
-              {error
-                ? "重试同步"
-                : data?.syncedAt && !data.complete
-                  ? "继续同步"
-                  : "同步 QQ 空间"}
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            aria-label="刷新本地列表"
-            disabled={loading || syncing}
-            onClick={() => {
-              void resources.load(page);
-              setRefresh((value) => value + 1);
-            }}
-          >
-            <RefreshCw size={16} />
+      <PageHeader module={module} actions={
+        syncing ? (
+          <Button variant="outline" onClick={() => void resources.pause()}>
+            <Pause size={15} />
+            暂停同步
           </Button>
-        </div>
-      </div>
+        ) : (
+          <Button disabled={loading} onClick={() => void resources.sync()}>
+            <RefreshCw size={15} />
+            {error ? "重试同步" : data?.syncedAt && !data.complete ? "继续同步" : module === "guestbook" ? "同步留言板" : "同步收藏"}
+          </Button>
+        )
+      } />
       <form
         role="search"
         className="flex flex-wrap gap-2"
@@ -284,21 +276,7 @@ export function LibraryPage(props: PageProps) {
   const Icon = guestbook ? MessageCircle : Star;
   return (
     <section className="mx-auto max-w-5xl space-y-5">
-      <header className="flex items-center gap-3 py-1">
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-          <Icon size={23} />
-        </span>
-        <div>
-          <h1 className="m-0 text-xl font-bold tracking-tight">
-            {guestbook ? "留言板" : "收藏"}
-          </h1>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {guestbook
-              ? "留下的话，和当时回应它的人。"
-              : "把舍不得忘记的内容，重新放回手边。"}
-          </p>
-        </div>
-      </header>
+      {(!isTauri() || !loggedIn) && <PageHeader module={module} />}
       {!isTauri() ? (
         <EmptyState
           icon={Icon}
